@@ -14,7 +14,7 @@ A "Mask" is the output of a function that generalises a string of data into a pa
 - Handles complex json nesting, including unrolling arrays. 
 - Byte frequency reports supports Unicode, as well as control characts like LF / CR
 
-See an example of High grain and Low grain masks which can be optionally utilised within bytefreq-rs:
+To help you understand how masks work, bytefreq-rs provides examples of high grain and low grain masks, which can be optionally utilized within the tool. These examples are shown in the table below:
 | Raw Data   | High Grain Example | Low Grain Example |
 |------------|--------------------|-------------------|
 | SW1 1AA    | AA9 9AA            | A9 9A             |
