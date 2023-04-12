@@ -3,6 +3,7 @@
 **Bytefreq-rs** implements a mask based data profiling technique that is one of the most efficient methods for doing data quality assessment on new unknown datasets you receive.
 
 A "Mask" is the output of a function that generalises a string of data into a pattern, the mask, which greatly reduces the cardinality of the original values. This cardinality reduction allows you to inspect vast quantities of data quickly in a field or column, helping you to discover outliers and data quality issues in your dataset. Examples of each pattern help to validate what you can expect when you come to use the data in a use case. **bytefreq-rs** is a refactor of the original bytefreq tool found here: https://github.com/minkymorgan/bytefreq
+
 ### Features:
 - Produces two report formats: Data Profiling, and Byte Frequency reports 
 - Supports both complex nested JSON and Delimited tabular data formats 
@@ -12,6 +13,13 @@ A "Mask" is the output of a function that generalises a string of data into a pa
 - Reports a true random example of a mask, using Reservoir Sampling. 
 - Handles complex json nesting, including unrolling arrays. 
 - Byte frequency reports supports Unicode, as well as control characts like LF / CR
+
+See an example of High grain and Low grain masks which can be optionally utilised within bytefreq-rs:
+| Raw Data   | High Grain Example | Low Grain Example |
+|------------|--------------------|-------------------|
+| SW1 1AA    | AA9 9AA            | A9 9A             |
+| 01/01/2023 | 99/99/9999         | 9/9/9             |
+
 
 I highly suggest you pre-parse complex csv using a decent parser, and pass clean pipe delimited values to this program. Also - this program expects a header for tabular data. (note: If there are ragged columns, this will probably error presently)
 
@@ -32,7 +40,6 @@ $ cargo build --release
 $ ./target/release/bytefreq-rs --help
 
 Bytefreq Data Profiler 1.0
-
 Andrew Morgan <minkymorgan@gmail.com>
 A command-line tool to generate data profiling reports based on various masking strategies.
 
@@ -40,23 +47,39 @@ USAGE:
     bytefreq-rs [OPTIONS]
 
 OPTIONS:
-    -d, --delimiter <DELIMITER>    Sets the delimiter used to separate fields in input tabular data.
-                                   Default: '|' (pipe character) [default: |]
-    -f, --format <FORMAT>          Sets the format of the input data:
-                                   'json' - JSON data (each line should contain a JSON object)
-                                   'tabular' - Tabular data (first line should be the header)
-                                   [default: tabular]
-    -g, --grain <GRAIN>            Sets the grain type for masking:
-                                   'H' - High grain (A for uppercase letters, a for lowercase
-                                   letters, 9 for digits)
-                                   'L' - Low grain (repeated pattern characters will be compressed
-                                   to one)
-                                   'U' - Unicode (uses Unicode general categories for masking
-                                   'LU'- Low grain Unicode (repeated pattern classes compressed to
-                                   one
-                                   ) [default: LU]
-    -h, --help                     Print help information
-    -V, --version                  Print version information
+    -a, --remove-array-numbers <REMOVE_ARRAY_NUMBERS>
+            Remove array numbers when set to true [default: false]
+
+    -d, --delimiter <DELIMITER>
+            Sets the delimiter used to separate fields in input tabular data.
+            Default: '|' (pipe character) [default: |]
+
+    -f, --format <FORMAT>
+            Sets the format of the input data:
+            'json' - JSON data (each line should contain a JSON object)
+            'tabular' - Tabular data (first line should be the header) [default: tabular]
+
+    -g, --grain <GRAIN>
+            Sets the grain type for masking:
+            'H' - High grain (A for uppercase letters, a for lowercase letters, 9 for digits)
+            'L' - Low grain (repeated pattern characters will be compressed to one)
+            'U' - Unicode (uses Unicode general categories for masking
+            'LU'- Low grain Unicode (repeated pattern classes compressed to one
+            ) [default: LU]
+
+    -h, --help
+            Print help information
+
+    -p, --pathdepth <PATHDEPTH>
+            Sets the depth for JSON paths (applicable for JSON data only). [default: 2]
+
+    -r, --report <REPORT>
+            Sets the type of report to generate:
+            'DQ' - Data Quality (default)
+            'CP' - Character Profiling [default: DQ]
+
+    -V, --version
+            Print version information
 ```
 ### Usage Examples:
 
@@ -73,56 +96,76 @@ $ cat testdata/test2.json | ./target/release/bytefreq-rs -f "json" -g "L"
 $ cat testdata/test3.tsv | ./target/release/bytefreq-rs -d "\t" -g "H"
 ```
 ### Example Output:
+Output on a simple JSON file showing Low Grain Unicode Statistics 
 
 ```
 cat testdata/source.geojson* | ./target/release/bytefreq-rs --format "json" -g "LU" |grep -v hash | column -t -s $'\t'
-Data Profiling Report: 20230403 00:55:13
-Examined rows: 190493
-column                                    count     pattern      example                         
---------------------------------          --------  --------     --------------------------------
-col_00007_properties.number               161668    "9-9"        "375-1"                         
-col_00007_properties.number               24538     "9"          "8"                             
-col_00007_properties.number               2784      "a9-9"       "丙551-1"                        
-col_00007_properties.number               1139      "9A"         "89C"                           
-col_00007_properties.number               177       "9a-9"       "2334ｲ-1"                       
-col_00007_properties.number               155       "9a9-9"      "17第2-1"                        
-col_00007_properties.number               17        "a-9"        "又又-1"                          
-col_00007_properties.number               12        "a9a9-9"     "ﾛ487第3-1"                      
-col_00007_properties.number               3         "a9a-9"      "又729ｲ-1"                       
-col_00009_properties.region               190493    "            ""                              
-col_00010_properties.street               164816    "a"          "城山町"                           
-col_00010_properties.street               19714     "Aa"         "Skálavegur"                    
-col_00010_properties.street               2612      "Aa Aa"      "Við Svartá"                    
-col_00010_properties.street               1970      "A Aa"       "Á Fløttinum"                   
-col_00010_properties.street               672       "Aa a Aa"    "Norðuri í Sundum"              
-col_00010_properties.street               387       "Aa Aa a"    "Jónas Broncks gøta"            
-col_00010_properties.street               119       "A.A. Aa a"  "R.C. Effersøes gøta"           
-col_00010_properties.street               68        "Aa a Aa a"  "Djóna í Geil gøta"             
-col_00010_properties.street               61        "Aa A"       "Handan Á"                      
-col_00010_properties.street               27        "A Aa Aa"    "Á Eystaru Hellu"               
-col_00010_properties.street               25        "Aa A Aa"    "Oman Á Bakka"                  
-col_00010_properties.street               13        "A. Aa a"    "C. Pløyens gøta"               
-col_00010_properties.street               9         "Aa a a"     "Suðuri í lægd"                 
-col_00011_properties.unit                 190493    "            ""                              
-col_00012_type                            190493    "Aa"         "Feature"                       
-col_00001_geometry.coordinates[1]         190493    9.9          62.0171126                      
-col_00002_geometry.type                   190493    "Aa"         "Point"                         
-col_00000_geometry.coordinates[0]         164816    9.9          129.826488                      
-col_00000_geometry.coordinates[0]         25677     -9.9         -6.724438                       
-col_00003_properties.city                 164816    "            ""                              
-col_00003_properties.city                 25398     "Aa"         "Hósvík"                        
-col_00003_properties.city                 220       "Aa, Aa"     "Nes, Vágur"                    
-col_00003_properties.city                 59        "Aa Aa"      "Undir Gøtueiði"                
-col_00004_properties.district             190493    "            ""                              
-col_00006_properties.id                   190493    "            ""                              
-col_00008_properties.postcode             164816    "            ""                              
-col_00008_properties.postcode             25677     "9"          "730"                           
 ```
+
+```
+Data Profiling Report: 20230412 18:12:19
+Examined rows: 164816
+FieldsPerLine:
+column                                    count     pattern   example
+--------------------------------          --------  --------  --------------------------------
+col_00012_type                            164816    "Aa"      "Feature"
+col_00011_properties.unit                 164816    "         ""
+col_00007_properties.number               161668    "9-9"     "3415-1"
+col_00007_properties.number               2784      "a9-9"    "丙988-1"
+col_00007_properties.number               177       "9a-9"    "61ﾛ-1"
+col_00007_properties.number               155       "9a9-9"   "1027第2-1"
+col_00007_properties.number               17        "a-9"     "又-1"
+col_00007_properties.number               12        "a9a9-9"  "又2537第1-1"
+col_00007_properties.number               3         "a9a-9"   "又1176ｲ-1"
+col_00004_properties.district             164816    "         ""
+col_00000_geometry.coordinates[0]         164816    9.9       129.54123
+col_00003_properties.city                 164816    "         ""
+col_00002_geometry.type                   164816    "Aa"      "Point"
+col_00001_geometry.coordinates[1]         164816    9.9       33.064243
+col_00009_properties.region               164816    "         ""
+col_00008_properties.postcode             164816    "         ""
+col_00006_properties.id                   164816    "         ""
+col_00010_properties.street               164816    "a"       "小浜町雲仙"                      
+```
+Output on the same JSON file flattening the nested Array JSON structure using the -a flag to remove array numbers.
+
+```
+cat testdata/source.geojson* | ./target/release/bytefreq-rs --format "json" -g "LU" -a "true" |grep -v hash | column -t -s $'\t'
+```
+
+```
+Data Profiling Report: 20230412 18:09:51
+Examined rows: 164816
+FieldsPerLine:
+column                                    count     pattern   example
+--------------------------------          --------  --------  --------------------------------
+col_00011_type                            164816    "Aa"      "Feature"
+col_00000_geometry.coordinates[]          329632    9.9       32.790883
+col_00002_properties.city                 164816    "         ""
+col_00001_geometry.type                   164816    "Aa"      "Point"
+col_00010_properties.unit                 164816    "         ""
+col_00007_properties.postcode             164816    "         ""
+col_00005_properties.id                   164816    "         ""
+col_00003_properties.district             164816    "         ""
+col_00006_properties.number               161668    "9-9"     "823-1"
+col_00006_properties.number               2784      "a9-9"    "丙966-1"
+col_00006_properties.number               177       "9a-9"    "669ﾛ-1"
+col_00006_properties.number               155       "9a9-9"   "35第1-1"
+col_00006_properties.number               17        "a-9"     "ヌ-1"
+col_00006_properties.number               12        "a9a9-9"  "ﾛ487第2-1"
+col_00006_properties.number               3         "a9a-9"   "又1176ｲ-1"
+col_00008_properties.region               164816    "         ""
+col_00009_properties.street               164816    "a"       "弁天町一丁目"
+```
+
+
+Output on a simple JSON file showing Unicode Statistics 
 
 ```
 cat testdata/source.geojson* | ./target/release/bytefreq-rs -f json -r CP -g "LU" |grep -v hash | column -t -s $'\t' 
+```
 
-
+```
 char                           count     description      name
 --------                       --------  ---------------  ---------------
 \u{a}                          190493    \n               LF - Line Feed
