@@ -1,5 +1,9 @@
 # bytefreq-rs 
-### Mask Based Data Profiling, for Data Quality Assessment
+
+### Mask Based Data Profiling, for Data Quality Assessment 
+<br>
+
+
 **Bytefreq-rs** implements a mask based data profiling technique that is one of the most efficient methods for doing data quality assessment on new unknown datasets you receive.
 
 A "Mask" is the output of a function that generalises a string of data into a pattern, the mask, which greatly reduces the cardinality of the original values. This cardinality reduction allows you to inspect vast quantities of data quickly in a field or column, helping you to discover outliers and data quality issues in your dataset. Examples of each pattern help to validate what you can expect when you come to use the data in a use case. **bytefreq-rs** is a refactor of the original bytefreq tool found here: https://github.com/minkymorgan/bytefreq
@@ -15,10 +19,12 @@ A "Mask" is the output of a function that generalises a string of data into a pa
 - Byte frequency reports supports Unicode, as well as control characts like LF / CR
 
 To help you understand how masks work, bytefreq-rs provides examples of high grain and low grain masks, which can be optionally utilized within the tool. These examples are shown in the table below:
+<br>
 | Raw Data   | High Grain Example | Low Grain Example |
 |------------|--------------------|-------------------|
 | SW1 1AA    | AA9 9AA            | A9 9A             |
 | 01/01/2023 | 99/99/9999         | 9/9/9             |
+<br>
 
 
 I highly suggest you pre-parse complex csv using a decent parser, and pass clean pipe delimited values to this program. Also - this program expects a header for tabular data. (note: If there are ragged columns, this will probably error presently)
@@ -81,176 +87,178 @@ OPTIONS:
     -V, --version
             Print version information
 ```
-### Usage Examples:
+### Simple Usage Examples:
 
 1. Process a tabular data file with default options (Unicode grain, '|' delimiter):
-```
+```bash
 $ cat testdata/test1.pip | ./target/release/bytefreq-rs
 ```
 2. Process a JSON data file with low grain masking:
-```
+```bash
 $ cat testdata/test2.json | ./target/release/bytefreq-rs -f "json" -g "L"
 ```
 3. Process a tabular data file with a custom delimiter and high grain masking:
-```
+```bash
 $ cat testdata/test3.tsv | ./target/release/bytefreq-rs -d "\t" -g "H"
 ```
-### Example Output:
-Output on a simple JSON file showing Low Grain Unicode Statistics 
+---
+## Companies House Postcode Tabular File Analysis
+This report provides an analysis of the RegAddress.PostCode field in a filtered 100k record dataset obtained from Companies House (testdata/BasicCompanyData-2021-02-01-part6_6_100k.pip). The data has been examined to detect patterns of characters in the postcode field, including low grain Unicode characters.
 
+### Overview
+The dataset contains information on the postcodes of various company registration addresses. A total of 100k rows of data were examined, and several patterns of characters in the postcode field were detected. The report shows a count of the fields that contain low grain Unicode characters, along with the patterns detected and example data.
+
+### Fields per Line
+The table below provides a summary of the fields detected by the tool along with the number of occurrences and patterns of characters detected. The column column shows the name of the field, count shows the number of occurrences of the pattern, pattern shows the pattern detected, and example provides an example of the data in the field.
+
+### Analysis
+The analysis of the postcode field shows that the most common pattern is A9 9A, which occurred in 88252 rows. This pattern indicates a UK postcode where the first part consists of a letter followed by a digit, and the second part consists of a digit followed by two letters.
+
+The second most common pattern is A9A 9A, which occurred in 7347 rows. This pattern indicates a UK postcode where the first part consists of a letter followed by a digit and another letter, and the second part consists of a digit followed by two letters.
+
+The following examples of poor quality data masks were identified:
+
+- *A9*: 3 occurences, where only the first few characters of the postcodes were entered e.g. IP20
+- *9*: 3 ocurrences, where only numerics were entered e.g. 8022
+- *A_A9 9A*: 1 occurence, where alphanumerics are identified in the postcode field e.g. L;N9 6NE
+
+### Usage
+To generate a similar report for a tabular file with low grain Unicode characters, the bytefreq-rs tool can be used with the appropriate flags. The output can be redirected to a file or piped to other commands for further analysis. In this example the Postcode field is specifically grepped.
+
+For the UK Chargepoints dataset, the following command can be used:
+
+```bash
+cat testdata/BasicCompanyData-2021-02-01-part6_6_100k.pip | ./target/release/bytefreq-rs -g "LU" | grep RegAddress.PostCode | column -t -s $'\t'
 ```
+
+### Output
+```
+col_00009_RegAddress.PostCode  88252     A9 9A     BA2 2EL
+col_00009_RegAddress.PostCode  7347      A9A 9A    EC4V 4BE
+col_00009_RegAddress.PostCode  4367      _
+col_00009_RegAddress.PostCode  12        A9A       NE349PE
+col_00009_RegAddress.PostCode  3         A9        IP20
+col_00009_RegAddress.PostCode  3         9         8022
+col_00009_RegAddress.PostCode  3         9 9       19 904
+col_00009_RegAddress.PostCode  2         A9 A      BA14 HHD
+col_00009_RegAddress.PostCode  2         A9 9A.    BR7 5HF.
+col_00009_RegAddress.PostCode  2         A9 9 A    SW18 4 UH
+col_00009_RegAddress.PostCode  1         A9A9A     EC1V2NX
+col_00009_RegAddress.PostCode  1         A 9       BLOCK 3
+col_00009_RegAddress.PostCode  1         A9A 9 A   EC1V 1 NR
+col_00009_RegAddress.PostCode  1         A 9A      CRO 9XP
+col_00009_RegAddress.PostCode  1         A_A9 9A   L;N9 6NE
+col_00009_RegAddress.PostCode  1         9A A      2L ONE
+```
+
+---
+
+## GeoJSON Low Grain Example 
+This is an example report generated by the bytefreq-rs tool for a geojson file.
+
+### Overview
+The tool examined a total of 164,816 rows of data and detected several patterns of characters in the fields of the data. The report shows a count of the fields that contain low grain Unicode characters, along with the patterns detected and example data.
+
+### Fields per Line
+The table provides a summary of the fields detected by the tool along with the number of occurrences and patterns of characters detected. The column column shows the name of the field, count shows the number of occurrences of the pattern, pattern shows the pattern detected, and example provides an example of the data in the field.
+
+### Analysis
+Examples of common patterns include most of the coordinate field all collapsing to `9.9` as you would expect for a coordinate. There are two examples of a this field collapsing to `A`, indicating non-numeric characters and consequent data quality issues.
+
+The Character profiling for this indiciates key characters which may lead to parsing issues.
+
+### Usage
+To generate a similar report for a JSON file with low grain Unicode characters, the bytefreq-rs tool can be used with the appropriate flags. The output can be redirected to a file or piped to other commands for further analysis.
+
+```bash
 cat testdata/source.geojson* | ./target/release/bytefreq-rs --format "json" -g "LU" |grep -v hash | column -t -s $'\t'
 ```
 
+### Output
+
 ```
-Data Profiling Report: 20230412 18:12:19
+Data Profiling Report: 20230413 10:15:22
 Examined rows: 164816
 FieldsPerLine:
 column                                    count     pattern   example
 --------------------------------          --------  --------  --------------------------------
-col_00012_type                            164816    "Aa"      "Feature"
 col_00011_properties.unit                 164816    "         ""
-col_00007_properties.number               161668    "9-9"     "3415-1"
-col_00007_properties.number               2784      "a9-9"    "丙988-1"
-col_00007_properties.number               177       "9a-9"    "61ﾛ-1"
-col_00007_properties.number               155       "9a9-9"   "1027第2-1"
-col_00007_properties.number               17        "a-9"     "又-1"
-col_00007_properties.number               12        "a9a9-9"  "又2537第1-1"
-col_00007_properties.number               3         "a9a-9"   "又1176ｲ-1"
-col_00004_properties.district             164816    "         ""
-col_00000_geometry.coordinates[0]         164816    9.9       129.54123
-col_00003_properties.city                 164816    "         ""
+col_00012_type                            164816    "Aa"      "Feature"
 col_00002_geometry.type                   164816    "Aa"      "Point"
-col_00001_geometry.coordinates[1]         164816    9.9       33.064243
 col_00009_properties.region               164816    "         ""
-col_00008_properties.postcode             164816    "         ""
+col_00003_properties.city                 164816    "         ""
 col_00006_properties.id                   164816    "         ""
-col_00010_properties.street               164816    "a"       "小浜町雲仙"                      
-```
-Output on the same JSON file flattening the nested Array JSON structure using the -a flag to remove array numbers.
-
-```
-cat testdata/source.geojson* | ./target/release/bytefreq-rs --format "json" -g "LU" -a "true" |grep -v hash | column -t -s $'\t'
-```
-
-```
-Data Profiling Report: 20230412 18:09:51
-Examined rows: 164816
-FieldsPerLine:
-column                                    count     pattern   example
---------------------------------          --------  --------  --------------------------------
-col_00011_type                            164816    "Aa"      "Feature"
-col_00000_geometry.coordinates[]          329632    9.9       32.790883
-col_00002_properties.city                 164816    "         ""
-col_00001_geometry.type                   164816    "Aa"      "Point"
-col_00010_properties.unit                 164816    "         ""
-col_00007_properties.postcode             164816    "         ""
-col_00005_properties.id                   164816    "         ""
-col_00003_properties.district             164816    "         ""
-col_00006_properties.number               161668    "9-9"     "823-1"
-col_00006_properties.number               2784      "a9-9"    "丙966-1"
-col_00006_properties.number               177       "9a-9"    "669ﾛ-1"
-col_00006_properties.number               155       "9a9-9"   "35第1-1"
-col_00006_properties.number               17        "a-9"     "ヌ-1"
-col_00006_properties.number               12        "a9a9-9"  "ﾛ487第2-1"
-col_00006_properties.number               3         "a9a-9"   "又1176ｲ-1"
-col_00008_properties.region               164816    "         ""
-col_00009_properties.street               164816    "a"       "弁天町一丁目"
+col_00010_properties.street               164816    "a"       "奈摩郷"
+col_00004_properties.district             164816    "         ""
+col_00007_properties.number               161668    "9-9"     "452-1"
+col_00007_properties.number               2784      "a9-9"    "ﾛ2403-1"
+col_00007_properties.number               177       "9a-9"    "85ﾆ-1"
+col_00007_properties.number               155       "9a9-9"   "826第2-1"
+col_00007_properties.number               17        "a-9"     "又-1"
+col_00007_properties.number               12        "a9a9-9"  "又1161第2-1"
+col_00007_properties.number               3         "a9a-9"   "又1176ｲ-1"
+col_00008_properties.postcode             164816    "         ""
+col_00000_geometry.coordinates[0]         164814    9.9       129.686892
+col_00000_geometry.coordinates[0]         2         "A"       "WRONG"
+col_00001_geometry.coordinates[1]         164814    9.9       32.866601
+col_00001_geometry.coordinates[1]         2         "A"       "ERROR"           
 ```
 
+Output on the same JSON file showing Unicode Statistics using Character Profiling
 
-Output on a simple JSON file showing Unicode Statistics 
-
-```
+```bash
 cat testdata/source.geojson* | ./target/release/bytefreq-rs -f json -r CP -g "LU" |grep -v hash | column -t -s $'\t' 
 ```
 
 ```
 char                           count     description      name
 --------                       --------  ---------------  ---------------
-\u{a}                          190493    \n               LF - Line Feed
-\u{20}                         7630                       SPACE
-\u{22}                         9524650   \"               QUOTATION MARK
-\u{2c}                         2286136   ,                COMMA
-\u{2d}                         190493    -                HYPHEN-MINUS
-\u{2e}                         381237    .                FULL STOP
-\u{30}                         487056    0                DIGIT ZERO
-\u{31}                         872758    1                DIGIT ONE
-\u{32}                         735372    2                DIGIT TWO
-\u{33}                         733375    3                DIGIT THREE
-\u{34}                         448046    4                DIGIT FOUR
-\u{35}                         457303    5                DIGIT FIVE
-\u{36}                         528031    6                DIGIT SIX
-\u{37}                         523090    7                DIGIT SEVEN
-\u{38}                         525587    8                DIGIT EIGHT
-\u{39}                         597565    9                DIGIT NINE
-\u{3a}                         2666902   :                COLON
-\u{41}                         1460      A                LATIN CAPITAL LETTER A
-\u{42}                         3245      B                LATIN CAPITAL LETTER B
-\u{43}                         218       C                LATIN CAPITAL LETTER C
-\u{44}                         781       D                LATIN CAPITAL LETTER D
-\u{45}                         1180      E                LATIN CAPITAL LETTER E
-\u{46}                         192936    F                LATIN CAPITAL LETTER F
-\u{47}                         3213      G                LATIN CAPITAL LETTER G
-\u{48}                         5964      H                LATIN CAPITAL LETTER H
-\u{49}                         218       I                LATIN CAPITAL LETTER I
-\u{4a}                         512       J                LATIN CAPITAL LETTER J
-\u{4b}                         4764      K                LATIN CAPITAL LETTER K
-\u{4c}                         2034      L                LATIN CAPITAL LETTER L
-\u{4d}                         2089      M                LATIN CAPITAL LETTER M
-\u{4e}                         2061      N                LATIN CAPITAL LETTER N
-\u{4f}                         1043      O                LATIN CAPITAL LETTER O
-\u{50}                         191055    P                LATIN CAPITAL LETTER P
-\u{52}                         1281      R                LATIN CAPITAL LETTER R
-\u{53}                         8095      S                LATIN CAPITAL LETTER S
-\u{54}                         9206      T                LATIN CAPITAL LETTER T
-\u{55}                         1210      U                LATIN CAPITAL LETTER U
-\u{56}                         4171      V                LATIN CAPITAL LETTER V
-\u{57}                         10        W                LATIN CAPITAL LETTER W
-\u{59}                         97        Y                LATIN CAPITAL LETTER Y
-\u{5a}                         10        Z                LATIN CAPITAL LETTER Z
-\u{5b}                         190493    [                LEFT SQUARE BRACKET
-\u{5d}                         190493    ]                RIGHT SQUARE BRACKET
-\u{61}                         810981    a                LATIN SMALL LETTER A
-\u{62}                         384574    b                LATIN SMALL LETTER B
-\u{63}                         951886    c                LATIN SMALL LETTER C
-\u{64}                         958604    d                LATIN SMALL LETTER D
-\u{65}                         2878541   e                LATIN SMALL LETTER E
-\u{66}                         193116    f                LATIN SMALL LETTER F
-\u{67}                         409765    g                LATIN SMALL LETTER G
-\u{68}                         387698    h                LATIN SMALL LETTER H
-\u{69}                         1733743   i                LATIN SMALL LETTER I
-\u{6a}                         4992      j                LATIN SMALL LETTER J
-\u{6b}                         17048     k                LATIN SMALL LETTER K
-\u{6c}                         15121     l                LATIN SMALL LETTER L
-\u{6d}                         385533    m                LATIN SMALL LETTER M
-\u{6e}                         975946    n                LATIN SMALL LETTER N
-\u{6f}                         1533200   o                LATIN SMALL LETTER O
-\u{70}                         953599    p                LATIN SMALL LETTER P
-\u{72}                         1767157   r                LATIN SMALL LETTER R
-\u{73}                         1163670   s                LATIN SMALL LETTER S
-\u{74}                         2682559   t                LATIN SMALL LETTER T
-\u{75}                         596650    u                LATIN SMALL LETTER U
-\u{76}                         27839     v                LATIN SMALL LETTER V
-\u{79}                         769198    y                LATIN SMALL LETTER Y
-\u{7a}                         14        z                LATIN SMALL LETTER Z
-\u{7b}                         571479    {                LEFT CURLY BRACKET
-\u{7d}                         571479    }                RIGHT CURLY BRACKET
-\u{c1}                         1548      Á                LATIN CAPITAL LETTER A WITH ACUTE
-\u{c6}                         99        Æ                LATIN CAPITAL LETTER AE
-\u{cd}                         892       Í                LATIN CAPITAL LETTER I WITH ACUTE
-\u{d3}                         169       Ó                LATIN CAPITAL LETTER O WITH ACUTE
-\u{d8}                         130       Ø                LATIN CAPITAL LETTER O WITH STROKE
-\u{da}                         192       Ú                LATIN CAPITAL LETTER U WITH ACUTE
-\u{e1}                         7245      á                LATIN SMALL LETTER A WITH ACUTE
-\u{e6}                         660       æ                LATIN SMALL LETTER AE
-\u{ed}                         7792      í                LATIN SMALL LETTER I WITH ACUTE
-\u{f0}                         11168     ð                LATIN SMALL LETTER ETH
-\u{f3}                         8125      ó                LATIN SMALL LETTER O WITH ACUTE
-\u{f8}                         11961     ø                LATIN SMALL LETTER O WITH STROKE
-\u{fa}                         1813      ú                LATIN SMALL LETTER U WITH ACUTE
-\u{fc}                         14        ü                LATIN SMALL LETTER U WITH DIAERESIS
-\u{fd}                         539       ý                LATIN SMALL LETTER Y WITH ACUTE
+\u{a}                          164816    \n               LF - Line Feed
+\u{22}                         8240808   \"               QUOTATION MARK
+\u{2c}                         1977792   ,                COMMA
+\u{2d}                         164816    -                HYPHEN-MINUS
+\u{2e}                         329628    .                FULL STOP
+\u{30}                         390967    0                DIGIT ZERO
+\u{31}                         782647    1                DIGIT ONE
+\u{32}                         643395    2                DIGIT TWO
+\u{33}                         666322    3                DIGIT THREE
+\u{34}                         383220    4                DIGIT FOUR
+\u{35}                         388767    5                DIGIT FIVE
+\u{36}                         416052    6                DIGIT SIX
+\u{37}                         442232    7                DIGIT SEVEN
+\u{38}                         454692    8                DIGIT EIGHT
+\u{39}                         532556    9                DIGIT NINE
+\u{3a}                         2307424   :                COLON
+\u{45}                         3         E                LATIN CAPITAL LETTER E
+\u{46}                         164816    F                LATIN CAPITAL LETTER F
+\u{47}                         1         G                LATIN CAPITAL LETTER G
+\u{4e}                         1         N                LATIN CAPITAL LETTER N
+\u{4f}                         4         O                LATIN CAPITAL LETTER O
+\u{50}                         164816    P                LATIN CAPITAL LETTER P
+\u{52}                         10        R                LATIN CAPITAL LETTER R
+\u{57}                         1         W                LATIN CAPITAL LETTER W
+\u{5b}                         164816    [                LEFT SQUARE BRACKET
+\u{5d}                         164816    ]                RIGHT SQUARE BRACKET
+\u{61}                         659143    a                LATIN SMALL LETTER A
+\u{62}                         329746    b                LATIN SMALL LETTER B
+\u{63}                         823358    c                LATIN SMALL LETTER C
+\u{64}                         824138    d                LATIN SMALL LETTER D
+\u{65}                         2472247   e                LATIN SMALL LETTER E
+\u{66}                         164417    f                LATIN SMALL LETTER F
+\u{67}                         329632    g                LATIN SMALL LETTER G
+\u{68}                         329632    h                LATIN SMALL LETTER H
+\u{69}                         1483344   i                LATIN SMALL LETTER I
+\u{6d}                         329632    m                LATIN SMALL LETTER M
+\u{6e}                         824080    n                LATIN SMALL LETTER N
+\u{6f}                         1318528   o                LATIN SMALL LETTER O
+\u{70}                         824080    p                LATIN SMALL LETTER P
+\u{72}                         1483344   r                LATIN SMALL LETTER R
+\u{73}                         988896    s                LATIN SMALL LETTER S
+\u{74}                         2307424   t                LATIN SMALL LETTER T
+\u{75}                         494448    u                LATIN SMALL LETTER U
+\u{79}                         659264    y                LATIN SMALL LETTER Y
+\u{7b}                         494448    {                LEFT CURLY BRACKET
+\u{7d}                         494448    }                RIGHT CURLY BRACKET
 \u{3005}                       2133      々               IDEOGRAPHIC ITERATION MARK
 \u{304b}                       262       か               HIRAGANA LETTER KA
 \u{304c}                       681       が               HIRAGANA LETTER GA
@@ -812,4 +820,77 @@ char                           count     description      name
 \u{ff9b}                       181       ﾛ                HALFWIDTH KATAKANA LETTER RO
 --------END OF REPORT--------
 
+```
+
+___ 
+
+## UK Chargepoints County JSON File Analysis
+This table shows an analysis of the ChargeDeviceLocation.Address.County field of the UK Chargepoints dataset, that was taken from https://chargepoints.dft.gov.uk/api/retrieve/registry/format/json.
+
+### Overview
+The dataset contains information on the count of the fields that contain low grain Unicode characters, along with the patterns detected and example data.
+
+### Fields per Line
+The table provides a summary of the fields detected by the tool along with the number of occurrences and patterns of characters detected. The column column shows the name of the field, count shows the number of occurrences of the pattern, pattern shows the pattern detected, and example provides an example of the data in the field.
+
+### Analysis
+The ChargeDeviceLocation.Address.County field was examined, and several patterns of characters were detected. The most common pattern was two uppercase letters (Aa), which was found in 10,088 occurrences and included examples such as "Coventry". The second most common pattern was two uppercase letters separated by a space (Aa Aa), which was found in 9,191 occurrences and included examples such as "Greater London".
+
+The following examples of poor quality data masks were identified:
+
+- *9*: 14 occurrences due to numerics being entered
+- *a*: 4 occurrences due to null being entered
+- *Aa9 9Aa*: 1 occurence, due to postcodes being entered
+
+These examples demonstrate the power and the speed of this technique for profiling
+
+### Usage
+To generate a similar report for a JSON file with low grain Unicode characters, the bytefreq-rs tool can be used with the appropriate flags. For this dataset the `-a` flag was used to unroll arrays. The output can be redirected to a file or piped to other commands for further analysis.
+
+For the UK Chargepoints dataset, the following command can be used:
+
+```bash
+cat testdata/chargepointsUK.json | ./target/release/bytefreq-rs -f json -g "LU" -a "true" |grep Address.County | column -t -s $'\t'
+```
+
+### Output
+```
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  10088     "Aa"               "Coventry"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  9191      "Aa Aa"            "Greater London"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2761      "Aa a Aa"          "Tyne and Wear"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2313      "Aa Aa a Aa"       "London Borough of Sutton"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1955      "A"                "NA"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1087      "Aa Aa a Aa a Aa"  "London Borough of Hammersmith and Fulham"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  358       "Aa Aa a Aa Aa"    "London Borough of Waltham Forest"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  192       "Aa Aa Aa"         "Liverpool City Council"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  180       "Aa a Aa Aa"       "Richmond upon Thames Council"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  112       "Aa "              "London "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  111       "Aa _ Aa"          "Dumfries & Galloway"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  82        "Aa."              "Notts."
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  69        "Aa _ Aa Aa"       "Hammersmith & Fulham Council"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  57        "Aa Aa Aa Aa"      "London Borough Of Southwark"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  23        "Aa a Aa Aa Aa"    "Bath and North East Somerset"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  21        "Aa Aa "           "West Midlands "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  20        "A Aa Aa"          "LB Tower Hamlets"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  17        "a"                "flintshire"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  14        "9"                "0"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  11        "Aa a-Aa Aa"       "Na h-Eileanan Siar"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  7         "Aa-a-Aa"          "Stockton-on-Tees"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  4         "Aa-Aa"            "Inverness-Shire"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  4         " Aa"              " Newport"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  4         a                  null
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  3         "Aa, Aa Aa"        "Yorkshire, North Riding"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  3         "Aa Aa a Aa "      "London Borough of Wandsworth "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2         "Aa, Aa a Aa"      "Bournemouth, Christchurch and Poole"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2         "Aa a Aa,"         "Tyne and Wear,"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2         "Aa a Aa, Aa"      "Vale of Glamorgan, The"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa9 9Aa"          "Me10 2La"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa-a"             "Inverness-shire"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "a Aa"             "west Yorkshire"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "a "               "kent "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "_Aa Aa"           "`West Midlands"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa _ Aa "         "Tyne & Wear "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "A_A"              "N/A"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "A9 9A"            "SG1 1EP"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa _Aa_"          "Glamorgan (Morgannwg)"
 ```
