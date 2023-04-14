@@ -45,7 +45,8 @@ $ cargo build --release
 $ ./target/release/bytefreq-rs --help
 
 Bytefreq Data Profiler 1.0
-Andrew Morgan <minkymorgan@gmail.com>
+Andrew Morgan <andrew.morgan@6point6.co.uk>
+Edward Jones <edward.jones@6point6.co.uk>
 A command-line tool to generate data profiling reports based on various masking strategies.
 
 USAGE:
