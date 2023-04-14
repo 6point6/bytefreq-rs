@@ -1,14 +1,16 @@
 # bytefreq-rs 
 
-### Mask Based Data Profiling, for Data Quality Assessment 
+## Mask Based Data Profiling, for Data Quality Assessment 
 <br>
 
+### Overview
+**Bytefreq-rs** is to be used as a lightweight tool for data quality profiling. 6point6 have developed a more mature and complex tool built in Scala and Spark, that is capable of profiling datasets with billions of records. This is not currently open-sourced but will be in the future.
 
-**Bytefreq-rs** implements a mask based data profiling technique that is one of the most efficient methods for doing data quality assessment on new unknown datasets you receive.
+Bytefreq-rs implements a mask based data profiling technique that is one of the most efficient methods for doing data quality assessment on new unknown datasets you receive.
 
 A "Mask" is the output of a function that generalises a string of data into a pattern, the mask, which greatly reduces the cardinality of the original values. This cardinality reduction allows you to inspect vast quantities of data quickly in a field or column, helping you to discover outliers and data quality issues in your dataset. Examples of each pattern help to validate what you can expect when you come to use the data in a use case. **bytefreq-rs** is a refactor of the original bytefreq tool found here: https://github.com/minkymorgan/bytefreq
 
-### Features:
+### Features
 - Produces two report formats: Data Profiling, and Byte Frequency reports 
 - Supports both complex nested JSON and Delimited tabular data formats 
 - Offers modern masks: "HU: HighGrain Unicode", and "LU: LowGrain Unicode"
@@ -103,7 +105,7 @@ $ cat testdata/test3.tsv | ./target/release/bytefreq-rs -d "\t" -g "H"
 ```
 ---
 ## Companies House Postcode Tabular File Analysis
-This report provides an analysis of the RegAddress.PostCode field in a filtered 100k record dataset obtained from Companies House (testdata/BasicCompanyData-2021-02-01-part6_6_100k.pip). The data has been examined to detect patterns of characters in the postcode field, including low grain Unicode characters.
+This report provides an analysis of the post dode field in a filtered 100k record CSV dataset obtained from Companies House (https://www.gov.uk/guidance/companies-house-data-products) that can be found in the testdata folder. The data has been examined to detect patterns of characters in the postcode field, including low grain Unicode characters.
 
 ### Overview
 The dataset contains information on the postcodes of various company registration addresses. A total of 100k rows of data were examined, and several patterns of characters in the postcode field were detected. The report shows a count of the fields that contain low grain Unicode characters, along with the patterns detected and example data.
@@ -118,9 +120,9 @@ The second most common pattern is A9A 9A, which occurred in 7347 rows. This patt
 
 The following examples of poor quality data masks were identified:
 
-- *A9*: 3 occurences, where only the first few characters of the postcodes were entered e.g. IP20
-- *9*: 3 ocurrences, where only numerics were entered e.g. 8022
-- *A_A9 9A*: 1 occurence, where alphanumerics are identified in the postcode field e.g. L;N9 6NE
+- **A9**: 3 occurences, where only the first few characters of the postcodes were entered e.g. IP20
+- **9**: 3 ocurrences, where only numerics were entered e.g. 8022
+- ***A_A9 9A**: 1 occurence, where alphanumerics are identified in the postcode field e.g. L;N9 6NE
 
 ### Usage
 To generate a similar report for a tabular file with low grain Unicode characters, the bytefreq-rs tool can be used with the appropriate flags. The output can be redirected to a file or piped to other commands for further analysis. In this example the Postcode field is specifically grepped.
@@ -152,6 +154,77 @@ col_00009_RegAddress.PostCode  1         9A A      2L ONE
 ```
 
 ---
+## UK Chargepoints County JSON File Analysis
+This table shows an analysis of the ChargeDeviceLocation.Address.County field of the UK Chargepoints JSON dataset, that was taken from https://chargepoints.dft.gov.uk/api/retrieve/registry/format/json.
+
+### Overview
+The dataset contains information on the count of the fields that contain low grain Unicode characters, along with the patterns detected and example data.
+
+### Fields per Line
+The table provides a summary of the fields detected by the tool along with the number of occurrences and patterns of characters detected. The column column shows the name of the field, count shows the number of occurrences of the pattern, pattern shows the pattern detected, and example provides an example of the data in the field.
+
+### Analysis
+The ChargeDeviceLocation.Address.County field was examined, and several patterns of characters were detected. The most common pattern was two uppercase letters (Aa), which was found in 10,088 occurrences and included examples such as "Coventry". The second most common pattern was two uppercase letters separated by a space (Aa Aa), which was found in 9,191 occurrences and included examples such as "Greater London".
+
+The following examples of poor quality data masks were identified:
+
+- **9**: 14 occurrences due to numerics being entered
+- **a**: 4 occurrences due to null being entered
+- **Aa9 9Aa**: 1 occurence, due to postcodes being entered
+
+These examples demonstrate the power and the speed of this technique for profiling
+
+### Usage
+To generate a similar report for a JSON file with low grain Unicode characters, the bytefreq-rs tool can be used with the appropriate flags. For this dataset the `-a` flag was used to unroll arrays. The output can be redirected to a file or piped to other commands for further analysis. This example shows the County column being grepped.
+
+For the UK Chargepoints dataset, the following command can be used:
+
+```bash
+cat testdata/chargepointsUK.json | ./target/release/bytefreq-rs -f json -g "LU" -a "true" |grep Address.County | column -t -s $'\t'
+```
+
+### Output
+```
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  10088     "Aa"               "Coventry"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  9191      "Aa Aa"            "Greater London"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2761      "Aa a Aa"          "Tyne and Wear"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2313      "Aa Aa a Aa"       "London Borough of Sutton"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1955      "A"                "NA"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1087      "Aa Aa a Aa a Aa"  "London Borough of Hammersmith and Fulham"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  358       "Aa Aa a Aa Aa"    "London Borough of Waltham Forest"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  192       "Aa Aa Aa"         "Liverpool City Council"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  180       "Aa a Aa Aa"       "Richmond upon Thames Council"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  112       "Aa "              "London "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  111       "Aa _ Aa"          "Dumfries & Galloway"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  82        "Aa."              "Notts."
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  69        "Aa _ Aa Aa"       "Hammersmith & Fulham Council"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  57        "Aa Aa Aa Aa"      "London Borough Of Southwark"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  23        "Aa a Aa Aa Aa"    "Bath and North East Somerset"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  21        "Aa Aa "           "West Midlands "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  20        "A Aa Aa"          "LB Tower Hamlets"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  17        "a"                "flintshire"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  14        "9"                "0"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  11        "Aa a-Aa Aa"       "Na h-Eileanan Siar"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  7         "Aa-a-Aa"          "Stockton-on-Tees"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  4         "Aa-Aa"            "Inverness-Shire"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  4         " Aa"              " Newport"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  4         a                  null
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  3         "Aa, Aa Aa"        "Yorkshire, North Riding"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  3         "Aa Aa a Aa "      "London Borough of Wandsworth "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2         "Aa, Aa a Aa"      "Bournemouth, Christchurch and Poole"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2         "Aa a Aa,"         "Tyne and Wear,"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2         "Aa a Aa, Aa"      "Vale of Glamorgan, The"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa9 9Aa"          "Me10 2La"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa-a"             "Inverness-shire"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "a Aa"             "west Yorkshire"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "a "               "kent "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "_Aa Aa"           "`West Midlands"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa _ Aa "         "Tyne & Wear "
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "A_A"              "N/A"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "A9 9A"            "SG1 1EP"
+col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa _Aa_"          "Glamorgan (Morgannwg)"
+```
+---
 
 ## GeoJSON Low Grain Example 
 This is an example report generated by the bytefreq-rs tool for a geojson file.
@@ -165,7 +238,7 @@ The table provides a summary of the fields detected by the tool along with the n
 ### Analysis
 Examples of common patterns include most of the coordinate field all collapsing to `9.9` as you would expect for a coordinate. There are two examples of a this field collapsing to `A`, indicating non-numeric characters and consequent data quality issues.
 
-The Character profiling for this indiciates key characters which may lead to parsing issues.
+The Character Profiling indicates a total of 164816 Line Feeds which matches the total record number, this technique can be extremely useuful for trouble shooting erroneous files within data pipelines. 
 
 ### Usage
 To generate a similar report for a JSON file with low grain Unicode characters, the bytefreq-rs tool can be used with the appropriate flags. The output can be redirected to a file or piped to other commands for further analysis.
@@ -820,77 +893,4 @@ char                           count     description      name
 \u{ff9b}                       181       ﾛ                HALFWIDTH KATAKANA LETTER RO
 --------END OF REPORT--------
 
-```
-
-___ 
-
-## UK Chargepoints County JSON File Analysis
-This table shows an analysis of the ChargeDeviceLocation.Address.County field of the UK Chargepoints dataset, that was taken from https://chargepoints.dft.gov.uk/api/retrieve/registry/format/json.
-
-### Overview
-The dataset contains information on the count of the fields that contain low grain Unicode characters, along with the patterns detected and example data.
-
-### Fields per Line
-The table provides a summary of the fields detected by the tool along with the number of occurrences and patterns of characters detected. The column column shows the name of the field, count shows the number of occurrences of the pattern, pattern shows the pattern detected, and example provides an example of the data in the field.
-
-### Analysis
-The ChargeDeviceLocation.Address.County field was examined, and several patterns of characters were detected. The most common pattern was two uppercase letters (Aa), which was found in 10,088 occurrences and included examples such as "Coventry". The second most common pattern was two uppercase letters separated by a space (Aa Aa), which was found in 9,191 occurrences and included examples such as "Greater London".
-
-The following examples of poor quality data masks were identified:
-
-- *9*: 14 occurrences due to numerics being entered
-- *a*: 4 occurrences due to null being entered
-- *Aa9 9Aa*: 1 occurence, due to postcodes being entered
-
-These examples demonstrate the power and the speed of this technique for profiling
-
-### Usage
-To generate a similar report for a JSON file with low grain Unicode characters, the bytefreq-rs tool can be used with the appropriate flags. For this dataset the `-a` flag was used to unroll arrays. The output can be redirected to a file or piped to other commands for further analysis.
-
-For the UK Chargepoints dataset, the following command can be used:
-
-```bash
-cat testdata/chargepointsUK.json | ./target/release/bytefreq-rs -f json -g "LU" -a "true" |grep Address.County | column -t -s $'\t'
-```
-
-### Output
-```
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  10088     "Aa"               "Coventry"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  9191      "Aa Aa"            "Greater London"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2761      "Aa a Aa"          "Tyne and Wear"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2313      "Aa Aa a Aa"       "London Borough of Sutton"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1955      "A"                "NA"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1087      "Aa Aa a Aa a Aa"  "London Borough of Hammersmith and Fulham"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  358       "Aa Aa a Aa Aa"    "London Borough of Waltham Forest"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  192       "Aa Aa Aa"         "Liverpool City Council"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  180       "Aa a Aa Aa"       "Richmond upon Thames Council"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  112       "Aa "              "London "
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  111       "Aa _ Aa"          "Dumfries & Galloway"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  82        "Aa."              "Notts."
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  69        "Aa _ Aa Aa"       "Hammersmith & Fulham Council"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  57        "Aa Aa Aa Aa"      "London Borough Of Southwark"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  23        "Aa a Aa Aa Aa"    "Bath and North East Somerset"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  21        "Aa Aa "           "West Midlands "
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  20        "A Aa Aa"          "LB Tower Hamlets"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  17        "a"                "flintshire"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  14        "9"                "0"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  11        "Aa a-Aa Aa"       "Na h-Eileanan Siar"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  7         "Aa-a-Aa"          "Stockton-on-Tees"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  4         "Aa-Aa"            "Inverness-Shire"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  4         " Aa"              " Newport"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  4         a                  null
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  3         "Aa, Aa Aa"        "Yorkshire, North Riding"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  3         "Aa Aa a Aa "      "London Borough of Wandsworth "
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2         "Aa, Aa a Aa"      "Bournemouth, Christchurch and Poole"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2         "Aa a Aa,"         "Tyne and Wear,"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  2         "Aa a Aa, Aa"      "Vale of Glamorgan, The"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa9 9Aa"          "Me10 2La"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa-a"             "Inverness-shire"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "a Aa"             "west Yorkshire"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "a "               "kent "
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "_Aa Aa"           "`West Midlands"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa _ Aa "         "Tyne & Wear "
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "A_A"              "N/A"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "A9 9A"            "SG1 1EP"
-col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa _Aa_"          "Glamorgan (Morgannwg)"
 ```
