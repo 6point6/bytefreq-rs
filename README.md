@@ -101,7 +101,7 @@ $ cat testdata/test2.json | ./target/release/bytefreq-rs -f "json" -g "L"
 $ cat testdata/test3.tsv | ./target/release/bytefreq-rs -d "\t" -g "H"
 ```
 
-## Example 1: Companies House CSV File Analysis
+## Example 1: Companies House Tabular File Analysis
 This report provides an analysis of the post code field in a filtered 100k record CSV dataset obtained from Companies House (https://www.gov.uk/guidance/companies-house-data-products) that can be found in the testdata folder. The data has been examined to detect patterns of characters in the postcode field, including low grain Unicode characters.
 
 ### Overview
