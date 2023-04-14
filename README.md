@@ -1,14 +1,16 @@
 # bytefreq-rs 
+*Mask Based Data Profiling, for Data Quality Assessment*
 
-## Mask Based Data Profiling, for Data Quality Assessment 
-<br>
-
+## What is bytefreq-rs?
+---
 ### Overview
 **Bytefreq-rs** is to be used as a lightweight tool for data quality profiling. 6point6 have developed a more mature and complex tool built in Scala and Spark, that is capable of profiling datasets with billions of records. This is not currently open-sourced but will be in the future.
 
 Bytefreq-rs implements a mask based data profiling technique that is one of the most efficient methods for doing data quality assessment on new unknown datasets you receive.
 
-A "Mask" is the output of a function that generalises a string of data into a pattern, the mask, which greatly reduces the cardinality of the original values. This cardinality reduction allows you to inspect vast quantities of data quickly in a field or column, helping you to discover outliers and data quality issues in your dataset. Examples of each pattern help to validate what you can expect when you come to use the data in a use case. **bytefreq-rs** is a refactor of the original bytefreq tool found here: https://github.com/minkymorgan/bytefreq
+A "Mask" is the output of a function that generalises a string of data into a pattern, the mask, which greatly reduces the cardinality of the original values. This cardinality reduction allows you to inspect vast quantities of data quickly in a field or column, helping you to discover outliers and data quality issues in your dataset. Examples of each pattern help to validate what you can expect when you come to use the data in a use case. **bytefreq-rs** is a refactor of the original bytefreq tool found here: https://github.com/minkymorgan/bytefreq.
+
+I highly suggest you pre-parse complex csv using a decent parser, and pass clean pipe delimited values to this program. Also - this program expects a header for tabular data. (note: If there are ragged columns, this will probably error presently).
 
 ### Features
 - Produces two report formats: Data Profiling, and Byte Frequency reports 
@@ -20,16 +22,13 @@ A "Mask" is the output of a function that generalises a string of data into a pa
 - Handles complex json nesting, including unrolling arrays. 
 - Byte frequency reports supports Unicode, as well as control characts like LF / CR
 
+### Masking Example
 To help you understand how masks work, bytefreq-rs provides examples of high grain and low grain masks, which can be optionally utilized within the tool. These examples are shown in the table below:
 <br>
 | Raw Data   | High Grain Example | Low Grain Example |
 |------------|--------------------|-------------------|
 | SW1 1AA    | AA9 9AA            | A9 9A             |
 | 01/01/2023 | 99/99/9999         | 9/9/9             |
-<br>
-
-
-I highly suggest you pre-parse complex csv using a decent parser, and pass clean pipe delimited values to this program. Also - this program expects a header for tabular data. (note: If there are ragged columns, this will probably error presently)
 
 ### License:
 
@@ -104,8 +103,8 @@ $ cat testdata/test2.json | ./target/release/bytefreq-rs -f "json" -g "L"
 $ cat testdata/test3.tsv | ./target/release/bytefreq-rs -d "\t" -g "H"
 ```
 ---
-## Companies House Postcode Tabular File Analysis
-This report provides an analysis of the post dode field in a filtered 100k record CSV dataset obtained from Companies House (https://www.gov.uk/guidance/companies-house-data-products) that can be found in the testdata folder. The data has been examined to detect patterns of characters in the postcode field, including low grain Unicode characters.
+## Example 1: Companies House CSV File Analysis
+This report provides an analysis of the post code field in a filtered 100k record CSV dataset obtained from Companies House (https://www.gov.uk/guidance/companies-house-data-products) that can be found in the testdata folder. The data has been examined to detect patterns of characters in the postcode field, including low grain Unicode characters.
 
 ### Overview
 The dataset contains information on the postcodes of various company registration addresses. A total of 100k rows of data were examined, and several patterns of characters in the postcode field were detected. The report shows a count of the fields that contain low grain Unicode characters, along with the patterns detected and example data.
@@ -154,7 +153,7 @@ col_00009_RegAddress.PostCode  1         9A A      2L ONE
 ```
 
 ---
-## UK Chargepoints County JSON File Analysis
+## Example 2: UK Chargepoints County JSON File Analysis
 This table shows an analysis of the ChargeDeviceLocation.Address.County field of the UK Chargepoints JSON dataset, that was taken from https://chargepoints.dft.gov.uk/api/retrieve/registry/format/json.
 
 ### Overview
@@ -226,7 +225,7 @@ col_00009_ChargeDevice[].ChargeDeviceLocation.Address.County  1         "Aa _Aa_
 ```
 ---
 
-## GeoJSON Low Grain Example 
+## Example 3: GeoJSON Low Grain Example 
 This is an example report generated by the bytefreq-rs tool for a geojson file.
 
 ### Overview
