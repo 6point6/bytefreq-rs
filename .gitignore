@@ -4,3 +4,4 @@ mvp/
 target/CACHEDIR.TAG
 target/
 out/
+.idea

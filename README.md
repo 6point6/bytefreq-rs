@@ -1,6 +1,8 @@
 # bytefreq-rs 
 *Mask Based Data Profiling, for Data Quality Assessment*
 
+*Build status*: [![Rust CI](https://github.com/6point6/bytefreq-rs/actions/workflows/rust.yaml/badge.svg)](https://github.com/6point6/bytefreq-rs/actions/workflows/rust.yaml)
+
 ## What is bytefreq-rs?
 ### Overview
 **Bytefreq-rs** is to be used as a lightweight tool for data quality profiling. 6point6 have developed a more mature and complex tool built in Scala and Spark, that is capable of profiling datasets with billions of records. This is not currently open-sourced but will be in the future.
