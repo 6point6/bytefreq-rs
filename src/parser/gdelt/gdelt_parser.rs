@@ -33,9 +33,9 @@ fn parse_gkg_v2(str: &str) -> GKGEventV2 {
                 enhanced_persons: build_enhanced_persons(values[12]),
                 organisations: build_organisations(values[13]),
                 enhanced_organisations: build_enhanced_organisations(values[14]),
-                // tone: build_tone(values[15]),
+                tone: build_tone(values[15]),
                 enhanced_dates: build_enhanced_dates(values[16]),
-                // gcams: build_gcams(values[17]),
+                gcams: build_gcams(values[17]),
                 sharing_image: Option::from(values[18].to_string()),
                 related_images: build_related_images(values[19]),
                 social_image_embeds: build_social_image_embeds(values[20]),
@@ -61,18 +61,18 @@ fn build_related_images(str: &str) -> Vec<String> {
     str.split(";").map(|s| s.to_string()).collect()
 }
 
-// fn build_tone(str: &str) -> Option<Tone> {
-//     let values: Vec<&str> = str.split(',').collect();
-//     Some(Tone {
-//         tone: values.get(0),
-//         positive_score: values.get(1),
-//         negative_score: values.get(2),
-//         polarity: values.get(3),
-//         activity_reference_density: values.get(4),
-//         self_group_reference_density: values.get(5),
-//         word_count: values.get(6),
-//     })
-// }
+fn build_tone(str: &str) -> Option<Tone> {
+    let values: Vec<&str> = str.split(',').collect();
+    Some(Tone {
+        tone: Some(values.get(0)?.to_string()),
+        positive_score:Some(values.get(1)?.to_string()),
+        negative_score: Some(values.get(2)?.to_string()),
+        polarity: Some(values.get(3)?.to_string()),
+        activity_reference_density: Some(values.get(4)?.to_string()),
+        self_group_reference_density: Some(values.get(5)?.to_string()),
+        word_count: Some(values.get(6)?.to_string()),
+    })
+}
 
 fn build_enhanced_dates(str: &str) -> Vec<EnhancedDate> {
     str.split(";")
@@ -80,18 +80,18 @@ fn build_enhanced_dates(str: &str) -> Vec<EnhancedDate> {
         .collect()
 }
 
-// fn build_gcams(str: &str) -> Vec<Gcam> {
-//     str.split(',')
-//         .filter_map(|s| build_gcam(s))
-//         .collect()
-// }
+fn build_gcams(str: &str) -> Vec<Gcam> {
+    str.split(',')
+        .filter_map(|s| build_gcam(s))
+        .collect()
+}
 
-// fn build_gcam(str: &str) -> Option<Gcam> {
-//     let split: Vec<&str> = str.split(':').collect();
-//     let gcam_code = Some(split.get(0).unwrap_or(&"").to_string());
-//     let gcam_value = Some(split.get(1));
-//     Some(Gcam { gcam_code, gcam_value })
-// }
+fn build_gcam(str: &str) -> Option<Gcam> {
+    let split: Vec<&str> = str.split(':').collect();
+    let gcam_code = Some(split.get(0).unwrap_or(&"").to_string());
+    let gcam_value = Some(split.get(1).unwrap().parse::<f64>().unwrap());
+    Some(Gcam { gcam_code, gcam_value })
+}
 
 
 fn build_enhanced_date(str: &str) -> Option<EnhancedDate> {
@@ -427,16 +427,16 @@ struct Count {
     location: Option<Location>,
 }
 
-// #[derive(Debug)]
-// struct Tone {
-//     tone: Option<String>,
-//     positive_score: Option<String>,
-//     negative_score: Option<String>,
-//     polarity: Option<String>,
-//     activity_reference_density: Option<String>,
-//     self_group_reference_density: Option<String>,
-//     word_count: Option<String>,
-// }
+#[derive(Debug)]
+struct Tone {
+    tone: Option<String>,
+    positive_score: Option<String>,
+    negative_score: Option<String>,
+    polarity: Option<String>,
+    activity_reference_density: Option<String>,
+    self_group_reference_density: Option<String>,
+    word_count: Option<String>,
+}
 
 #[derive(Debug)]
 struct EnhancedLocation {
@@ -462,11 +462,11 @@ struct EnhancedOrganisation {
     char_offset: Option<i32>,
 }
 
-// #[derive(Debug)]
-// struct Gcam {
-//     gcam_code: Option<String>,
-//     gcam_value: Option<f64>,
-// }
+#[derive(Debug)]
+struct Gcam {
+    gcam_code: Option<String>,
+    gcam_value: Option<f64>,
+}
 
 #[derive(Debug)]
 struct GkgRecordId {
@@ -529,9 +529,9 @@ struct GKGEventV2 {
     enhanced_persons: Vec<EnhancedPerson>,
     organisations: Vec<String>,
     enhanced_organisations: Vec<EnhancedOrganisation>,
-    // tone: Option<Tone>,
+    tone: Option<Tone>,
     enhanced_dates: Vec<EnhancedDate>,
-    // gcams: Vec<Gcam>,
+    gcams: Vec<Gcam>,
     sharing_image: Option<String>,
     related_images: Vec<String>,
     social_image_embeds: Vec<String>,
@@ -588,7 +588,7 @@ mod tests {
             let out: GKGEventV2 = parse_gkg_v2(&record_str);
 
             // process the record
-            // println!("{:?}", out);
+            println!("{:?}", out);
         }
     }
 
@@ -609,6 +609,16 @@ mod tests {
 
         //publish_date
         assert_eq!( out.publish_date.unwrap().to_string(), "2023-04-17 16:30:00 UTC");
+
+        //tone
+        assert_eq!( out.tone.as_ref().unwrap().tone.clone().unwrap(), "-1.01010101010101");
+        assert_eq!( out.tone.as_ref().unwrap().positive_score.clone().unwrap(), "3.03030303030303");
+        assert_eq!( out.tone.as_ref().unwrap().negative_score.clone().unwrap(), "4.04040404040404");
+
+        //gcam
+        assert_eq!( out.gcams[0].gcam_value.clone().unwrap(), 89.0);
+        assert_eq!( out.gcams[0].gcam_code.clone().unwrap(), "wc");
+
     }
 
 }
