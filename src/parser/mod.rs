@@ -1,2 +1,3 @@
 pub(crate) mod json;
 pub(crate) mod tabular;
+mod gdelt;
